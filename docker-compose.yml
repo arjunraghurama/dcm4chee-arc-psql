@@ -1,1 +1,40 @@
-
+version: "3.5"
+services:
+    ldap:
+        image: dcm4che/slapd-dcm4chee:2.4.44-14.0
+        container_name: ldap
+        volumes: 
+            - ./dcm4/dcm4chee-arc/ldap:/var/lib/ldap
+            - ./dcm4/dcm4chee-arc/slapd.d:/etc/ldap/slapd.d
+        ports: 
+            - "389:389"
+    db:
+        image: dcm4che/postgres-dcm4chee:10.4-14
+        container_name: db
+        ports: 
+            - "5432:5432"
+        volumes: 
+            - ./dcm4/dcm4chee-arc/db:/var/lib/postgresql/data
+        environment: 
+            POSTGRES_DB: pacsdb 
+            POSTGRES_USER: pacs 
+            POSTGRES_PASSWORD: pacs 
+    arc:
+        image: dcm4che/dcm4chee-arc-psql:5.14.0
+        ports: 
+            - "8081:8080" 
+            - "8443:8443" 
+            - "9990:9990" 
+            - "11113:11112"
+            - "2575:2575" 
+        container_name: arc
+        depends_on:
+            - db
+            - ldap
+        volumes: 
+            - ./dcm4/dcm4chee-arc/wildfly:/opt/wildfly/standalone
+        environment: 
+            POSTGRES_DB: pacsdb 
+            POSTGRES_USER: pacs 
+            POSTGRES_PASSWORD: pacs 
+            WILDFLY_WAIT_FOR: ldap:389 db:5432
